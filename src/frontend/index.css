@@ -1,0 +1,154 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Bricolage Grotesque – Display ──────────────────── */
+@font-face {
+  font-family: "Bricolage Grotesque";
+  src: url("/assets/fonts/BricolageGrotesque-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ── Sora – Body ─────────────────────────────────────── */
+@font-face {
+  font-family: "Sora";
+  src: url("/assets/fonts/Sora-Variable.woff2") format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@layer base {
+  :root {
+    --radius: 0.75rem;
+
+    /* Deep dark financial theme */
+    --background: 0.14 0.012 255;
+    --foreground: 0.94 0.008 255;
+
+    --card: 0.18 0.015 255;
+    --card-foreground: 0.94 0.008 255;
+
+    --popover: 0.20 0.016 255;
+    --popover-foreground: 0.94 0.008 255;
+
+    /* Emerald-teal primary */
+    --primary: 0.72 0.18 168;
+    --primary-foreground: 0.10 0.012 168;
+
+    --secondary: 0.22 0.018 255;
+    --secondary-foreground: 0.88 0.008 255;
+
+    --muted: 0.22 0.018 255;
+    --muted-foreground: 0.58 0.025 255;
+
+    --accent: 0.26 0.022 255;
+    --accent-foreground: 0.94 0.008 255;
+
+    --destructive: 0.60 0.22 18;
+    --destructive-foreground: 0.98 0.005 18;
+
+    --border: 0.28 0.018 255;
+    --input: 0.24 0.016 255;
+    --ring: 0.72 0.18 168;
+
+    /* Semantic profit/loss colors */
+    --profit: 0.72 0.18 168;
+    --profit-foreground: 0.14 0.012 255;
+    --profit-muted: 0.20 0.06 168;
+
+    --loss: 0.60 0.22 18;
+    --loss-foreground: 0.98 0.005 18;
+    --loss-muted: 0.20 0.07 18;
+
+    --amber: 0.78 0.16 78;
+
+    /* Charts */
+    --chart-1: 0.72 0.18 168;
+    --chart-2: 0.78 0.16 78;
+    --chart-3: 0.60 0.22 18;
+    --chart-4: 0.65 0.20 240;
+    --chart-5: 0.68 0.17 310;
+
+    /* Sidebar */
+    --sidebar: 0.12 0.012 255;
+    --sidebar-foreground: 0.94 0.008 255;
+    --sidebar-primary: 0.72 0.18 168;
+    --sidebar-primary-foreground: 0.10 0.012 168;
+    --sidebar-accent: 0.20 0.016 255;
+    --sidebar-accent-foreground: 0.88 0.008 255;
+    --sidebar-border: 0.26 0.018 255;
+    --sidebar-ring: 0.72 0.18 168;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Sora", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: "Bricolage Grotesque", sans-serif;
+  }
+}
+
+@layer utilities {
+  .text-profit {
+    color: oklch(var(--profit));
+  }
+
+  .text-loss {
+    color: oklch(var(--loss));
+  }
+
+  .bg-profit-muted {
+    background-color: oklch(var(--profit-muted));
+  }
+
+  .bg-loss-muted {
+    background-color: oklch(var(--loss-muted));
+  }
+
+  .border-profit {
+    border-color: oklch(var(--profit) / 0.3);
+  }
+
+  .border-loss {
+    border-color: oklch(var(--loss) / 0.3);
+  }
+
+  .glow-profit {
+    box-shadow: 0 0 24px oklch(var(--profit) / 0.12), 0 1px 3px oklch(0 0 0 / 0.4);
+  }
+
+  .glow-loss {
+    box-shadow: 0 0 24px oklch(var(--loss) / 0.12), 0 1px 3px oklch(0 0 0 / 0.4);
+  }
+
+  .glow-primary {
+    box-shadow: 0 0 24px oklch(var(--primary) / 0.15), 0 1px 3px oklch(0 0 0 / 0.4);
+  }
+
+  .card-glass {
+    background: oklch(var(--card) / 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .nav-glass {
+    background: oklch(var(--background) / 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+}
