@@ -9,13 +9,13 @@ import Time "mo:core/Time";
 import Float "mo:core/Float";
 import Order "mo:core/Order";
 import Nat "mo:core/Nat";
-import Migration "migration";
+
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import AccessControl "authorization/access-control";
 
 // Use with clause to enable upgrade migration
-(with migration = Migration.run)
+
 actor {
   // Initialize the access control system
   let accessControlState = AccessControl.initState();

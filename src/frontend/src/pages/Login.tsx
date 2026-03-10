@@ -32,6 +32,7 @@ export default function Login({ defaultTab = "signin" }: LoginProps) {
   const { actor } = useActor();
 
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   // Sign In state
   const [signInEmail, setSignInEmail] = useState("");
@@ -156,7 +157,13 @@ export default function Login({ defaultTab = "signin" }: LoginProps) {
 
         {/* Auth card */}
         <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => {
+              setActiveTab(v);
+              setShowForgotPassword(false);
+            }}
+          >
             <TabsList className="w-full rounded-none border-b border-border bg-card h-12 p-0 gap-0">
               <TabsTrigger
                 value="signin"
@@ -176,91 +183,148 @@ export default function Login({ defaultTab = "signin" }: LoginProps) {
 
             {/* Sign In */}
             <TabsContent value="signin" className="p-7 pt-6">
-              <form onSubmit={handleSignIn} className="space-y-5">
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="signin-email"
-                    className="text-sm font-medium text-foreground"
+              {showForgotPassword ? (
+                <div className="space-y-4" data-ocid="forgot.panel">
+                  <div className="text-center">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-3">
+                      <TrendingUp className="w-5 h-5 text-profit" />
+                    </div>
+                    <h3 className="font-display font-semibold text-base text-foreground mb-1">
+                      Reset your password
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      To reset your password, you'll need to create a new
+                      account with the same email address. Your existing data is
+                      stored securely and cannot be transferred between
+                      accounts.
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-accent/30 p-4">
+                    <p className="text-xs text-muted-foreground text-center">
+                      Password recovery via email is not currently available. If
+                      you remember any variation of your password, try signing
+                      in.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 border-border text-foreground hover:bg-accent"
+                    onClick={() => setShowForgotPassword(false)}
+                    data-ocid="forgot.cancel_button"
                   >
-                    Email address
-                  </Label>
-                  <Input
-                    id="signin-email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={signInEmail}
-                    onChange={(e) => setSignInEmail(e.target.value)}
-                    required
-                    autoComplete="email"
-                    className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
-                    data-ocid="login.input"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label
-                    htmlFor="signin-password"
-                    className="text-sm font-medium text-foreground"
-                  >
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Input
-                      id="signin-password"
-                      type={showSignInPassword ? "text" : "password"}
-                      placeholder="Enter your password"
-                      value={signInPassword}
-                      onChange={(e) => setSignInPassword(e.target.value)}
-                      required
-                      autoComplete="current-password"
-                      className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary pr-11"
-                      data-ocid="login.input"
-                    />
+                    Back to Sign In
+                  </Button>
+                  <p className="text-sm text-center text-muted-foreground">
+                    New here?{" "}
                     <button
                       type="button"
-                      onClick={() => setShowSignInPassword((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                      tabIndex={-1}
-                      aria-label={
-                        showSignInPassword ? "Hide password" : "Show password"
-                      }
+                      onClick={() => {
+                        setShowForgotPassword(false);
+                        switchToRegister();
+                      }}
+                      className="text-primary hover:text-primary/80 font-semibold transition-colors"
                     >
-                      {showSignInPassword ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
+                      Create a new account
                     </button>
-                  </div>
+                  </p>
                 </div>
+              ) : (
+                <form onSubmit={handleSignIn} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label
+                      htmlFor="signin-email"
+                      className="text-sm font-medium text-foreground"
+                    >
+                      Email address
+                    </Label>
+                    <Input
+                      id="signin-email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={signInEmail}
+                      onChange={(e) => setSignInEmail(e.target.value)}
+                      required
+                      autoComplete="email"
+                      className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary"
+                      data-ocid="login.input"
+                    />
+                  </div>
 
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-sm transition-all"
-                  data-ocid="login.primary_button"
-                >
-                  {isLoading && activeTab === "signin" ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    "Sign In"
-                  )}
-                </Button>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label
+                        htmlFor="signin-password"
+                        className="text-sm font-medium text-foreground"
+                      >
+                        Password
+                      </Label>
+                      <button
+                        type="button"
+                        onClick={() => setShowForgotPassword(true)}
+                        className="text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+                        data-ocid="login.forgot_password_button"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Input
+                        id="signin-password"
+                        type={showSignInPassword ? "text" : "password"}
+                        placeholder="Enter your password"
+                        value={signInPassword}
+                        onChange={(e) => setSignInPassword(e.target.value)}
+                        required
+                        autoComplete="current-password"
+                        className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-primary pr-11"
+                        data-ocid="login.input"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignInPassword((v) => !v)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                        tabIndex={-1}
+                        aria-label={
+                          showSignInPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        {showSignInPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  </div>
 
-                <p className="text-sm text-center text-muted-foreground">
-                  Don&apos;t have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => switchToRegister()}
-                    className="text-primary hover:text-primary/80 font-semibold transition-colors"
+                  <Button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-sm transition-all"
+                    data-ocid="login.primary_button"
                   >
-                    Register
-                  </button>
-                </p>
-              </form>
+                    {isLoading && activeTab === "signin" ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Signing in...
+                      </>
+                    ) : (
+                      "Sign In"
+                    )}
+                  </Button>
+
+                  <p className="text-sm text-center text-muted-foreground">
+                    Don&apos;t have an account?{" "}
+                    <button
+                      type="button"
+                      onClick={() => switchToRegister()}
+                      className="text-primary hover:text-primary/80 font-semibold transition-colors"
+                    >
+                      Register
+                    </button>
+                  </p>
+                </form>
+              )}
             </TabsContent>
 
             {/* Create Account */}
@@ -450,7 +514,7 @@ export default function Login({ defaultTab = "signin" }: LoginProps) {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          © {new Date().getFullYear()}. Built with ♥ using{" "}
+          &copy; {new Date().getFullYear()}. Built with &hearts; using{" "}
           <a
             href={`https://caffeine.ai?utm_source=caffeine-footer&utm_medium=referral&utm_content=${encodeURIComponent(window.location.hostname)}`}
             target="_blank"

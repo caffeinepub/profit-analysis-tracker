@@ -1,17 +1,22 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertCircle,
   CalendarDays,
-  FileSpreadsheet,
-  FileText,
-  FileType,
+  ChevronDown,
+  Download,
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import type { MonthlySummary } from "../backend.d";
-import { useGetMonthlySummaries } from "../hooks/useQueries";
+import type { Entry, MonthlySummary } from "../backend.d";
+import { useGetEntries, useGetMonthlySummaries } from "../hooks/useQueries";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -42,87 +47,164 @@ function triggerDownload(filename: string, content: string, mimeType: string) {
   URL.revokeObjectURL(url);
 }
 
-function exportCSV(summaries: MonthlySummary[]) {
-  const header =
-    "Month,Total Invested,Total Received,Total Profit,Profit %,Avg Daily Profit %,Entry Count";
-  const rows = summaries.map((s) =>
-    [
-      formatYearMonth(s.yearMonth),
-      s.totalInvested.toFixed(2),
-      s.totalReceived.toFixed(2),
-      s.totalProfit.toFixed(2),
-      s.profitPercent.toFixed(2),
-      s.avgDailyProfit.toFixed(2),
-      Number(s.entryCount),
-    ].join(","),
-  );
-  const csv = [header, ...rows].join("\n");
-  triggerDownload("monthly-history.csv", csv, "text/csv;charset=utf-8;");
+function getMonthEntries(entries: Entry[], yearMonth: string): Entry[] {
+  return entries
+    .filter((e) => e.date.startsWith(yearMonth))
+    .sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function exportDOC(summaries: MonthlySummary[]) {
-  const rows = summaries
-    .map(
-      (s) => `
+function exportMonthCSV(summary: MonthlySummary, entries: Entry[]) {
+  const monthEntries = getMonthEntries(entries, summary.yearMonth);
+  const header = "Date,Invest,Profit,Overall %";
+  const rows = monthEntries.map((e) => {
+    const profit = e.receivedAmount - e.investAmount;
+    const overall = e.investAmount > 0 ? (profit / e.investAmount) * 100 : 0;
+    return [
+      e.date,
+      e.investAmount.toFixed(2),
+      profit.toFixed(2),
+      overall.toFixed(2),
+    ].join(",");
+  });
+  // Totals row
+  const totalInvest = monthEntries.reduce((s, e) => s + e.investAmount, 0);
+  const totalProfit = monthEntries.reduce(
+    (s, e) => s + (e.receivedAmount - e.investAmount),
+    0,
+  );
+  const totalOverall = totalInvest > 0 ? (totalProfit / totalInvest) * 100 : 0;
+  const totalRow = [
+    "TOTAL",
+    totalInvest.toFixed(2),
+    totalProfit.toFixed(2),
+    totalOverall.toFixed(2),
+  ].join(",");
+  const csv = [header, ...rows, "", totalRow].join("\n");
+  const filename = `${summary.yearMonth}-profit-report.csv`;
+  triggerDownload(filename, csv, "text/csv;charset=utf-8;");
+}
+
+function exportMonthDOC(summary: MonthlySummary, entries: Entry[]) {
+  const monthEntries = getMonthEntries(entries, summary.yearMonth);
+  const totalInvest = monthEntries.reduce((s, e) => s + e.investAmount, 0);
+  const totalProfit = monthEntries.reduce(
+    (s, e) => s + (e.receivedAmount - e.investAmount),
+    0,
+  );
+  const totalOverall = totalInvest > 0 ? (totalProfit / totalInvest) * 100 : 0;
+
+  const rows = monthEntries
+    .map((e) => {
+      const profit = e.receivedAmount - e.investAmount;
+      const overall = e.investAmount > 0 ? (profit / e.investAmount) * 100 : 0;
+      return `
     <tr>
-      <td style="padding:8px 12px;border:1px solid #ccc;">${formatYearMonth(s.yearMonth)}</td>
-      <td style="padding:8px 12px;border:1px solid #ccc;">${formatCurrency(s.totalInvested)}</td>
-      <td style="padding:8px 12px;border:1px solid #ccc;">${formatCurrency(s.totalReceived)}</td>
-      <td style="padding:8px 12px;border:1px solid #ccc;">${formatCurrency(s.totalProfit)}</td>
-      <td style="padding:8px 12px;border:1px solid #ccc;">${s.profitPercent.toFixed(2)}%</td>
-      <td style="padding:8px 12px;border:1px solid #ccc;">${s.avgDailyProfit.toFixed(2)}%</td>
-      <td style="padding:8px 12px;border:1px solid #ccc;">${Number(s.entryCount)}</td>
-    </tr>`,
-    )
+      <td style="padding:6px 10px;border:1px solid #ccc;">${e.date}</td>
+      <td style="padding:6px 10px;border:1px solid #ccc;">${formatCurrency(e.investAmount)}</td>
+      <td style="padding:6px 10px;border:1px solid #ccc;color:${profit >= 0 ? "#16a34a" : "#dc2626"}">${formatCurrency(profit)}</td>
+      <td style="padding:6px 10px;border:1px solid #ccc;color:${overall >= 0 ? "#16a34a" : "#dc2626"}">${overall.toFixed(2)}%</td>
+    </tr>`;
+    })
     .join("");
 
   const html = `
-<html><head><meta charset="utf-8"><title>ProfitTrack Monthly History</title></head>
+<html><head><meta charset="utf-8"><title>${formatYearMonth(summary.yearMonth)} — ProfitTrack</title></head>
 <body style="font-family:Arial,sans-serif;">
-<h2>ProfitTrack — Monthly History</h2>
+<h2>ProfitTrack — ${formatYearMonth(summary.yearMonth)}</h2>
 <table style="border-collapse:collapse;width:100%;font-size:13px;">
   <thead>
     <tr style="background:#f0f0f0;">
-      <th style="padding:8px 12px;border:1px solid #ccc;text-align:left;">Month</th>
-      <th style="padding:8px 12px;border:1px solid #ccc;text-align:left;">Total Invested</th>
-      <th style="padding:8px 12px;border:1px solid #ccc;text-align:left;">Total Received</th>
-      <th style="padding:8px 12px;border:1px solid #ccc;text-align:left;">Total Profit</th>
-      <th style="padding:8px 12px;border:1px solid #ccc;text-align:left;">Profit %</th>
-      <th style="padding:8px 12px;border:1px solid #ccc;text-align:left;">Avg Daily %</th>
-      <th style="padding:8px 12px;border:1px solid #ccc;text-align:left;">Entries</th>
+      <th style="padding:6px 10px;border:1px solid #ccc;text-align:left;">Date</th>
+      <th style="padding:6px 10px;border:1px solid #ccc;text-align:left;">Invest</th>
+      <th style="padding:6px 10px;border:1px solid #ccc;text-align:left;">Profit</th>
+      <th style="padding:6px 10px;border:1px solid #ccc;text-align:left;">Overall %</th>
     </tr>
   </thead>
-  <tbody>${rows}</tbody>
+  <tbody>${rows}
+    <tr style="background:#e8f5e9;font-weight:bold;">
+      <td style="padding:6px 10px;border:1px solid #ccc;">TOTAL</td>
+      <td style="padding:6px 10px;border:1px solid #ccc;">${formatCurrency(totalInvest)}</td>
+      <td style="padding:6px 10px;border:1px solid #ccc;color:${totalProfit >= 0 ? "#16a34a" : "#dc2626"}">${formatCurrency(totalProfit)}</td>
+      <td style="padding:6px 10px;border:1px solid #ccc;color:${totalOverall >= 0 ? "#16a34a" : "#dc2626"}">${totalOverall.toFixed(2)}%</td>
+    </tr>
+  </tbody>
 </table>
 </body></html>`;
 
-  triggerDownload("monthly-history.doc", html, "application/msword");
+  triggerDownload(
+    `${summary.yearMonth}-profit-report.doc`,
+    html,
+    "application/msword",
+  );
 }
 
-function exportPDF(_summaries: MonthlySummary[]) {
-  const style = document.createElement("style");
-  style.id = "print-monthly-style";
-  style.textContent = `
-    @media print {
-      body * { visibility: hidden !important; }
-      [data-print-area], [data-print-area] * { visibility: visible !important; }
-      [data-print-area] { position: fixed !important; top: 0; left: 0; width: 100%; background: white; color: black; }
-    }
-  `;
-  document.head.appendChild(style);
-  window.print();
+function exportMonthPDF(summary: MonthlySummary, entries: Entry[]) {
+  const monthEntries = getMonthEntries(entries, summary.yearMonth);
+  const totalInvest = monthEntries.reduce((s, e) => s + e.investAmount, 0);
+  const totalProfit = monthEntries.reduce(
+    (s, e) => s + (e.receivedAmount - e.investAmount),
+    0,
+  );
+  const totalOverall = totalInvest > 0 ? (totalProfit / totalInvest) * 100 : 0;
+
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) return;
+
+  const rows = monthEntries
+    .map((e) => {
+      const profit = e.receivedAmount - e.investAmount;
+      const overall = e.investAmount > 0 ? (profit / e.investAmount) * 100 : 0;
+      return `
+    <tr>
+      <td>${e.date}</td>
+      <td>${formatCurrency(e.investAmount)}</td>
+      <td style="color:${profit >= 0 ? "#16a34a" : "#dc2626"}">${formatCurrency(profit)}</td>
+      <td style="color:${overall >= 0 ? "#16a34a" : "#dc2626"}">${overall.toFixed(2)}%</td>
+    </tr>`;
+    })
+    .join("");
+
+  printWindow.document.write(`
+<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>${formatYearMonth(summary.yearMonth)} — ProfitTrack</title>
+<style>
+  body{font-family:Arial,sans-serif;padding:20px;color:#111;}
+  h2{margin-bottom:4px;}p{margin:0 0 16px;color:#555;font-size:13px;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th{background:#f0f0f0;padding:8px 12px;border:1px solid #ccc;text-align:left;}
+  td{padding:7px 12px;border:1px solid #ddd;}
+  .total{background:#e8f5e9;font-weight:bold;}
+  @media print{body{padding:0;}}
+</style></head><body>
+<h2>ProfitTrack — ${formatYearMonth(summary.yearMonth)}</h2>
+<p>${monthEntries.length} entries &nbsp;|&nbsp; Total Invested: ${formatCurrency(totalInvest)} &nbsp;|&nbsp; Total Profit: ${formatCurrency(totalProfit)}</p>
+<table>
+  <thead><tr><th>Date</th><th>Invest</th><th>Profit</th><th>Overall %</th></tr></thead>
+  <tbody>
+    ${rows}
+    <tr class="total">
+      <td>TOTAL</td>
+      <td>${formatCurrency(totalInvest)}</td>
+      <td style="color:${totalProfit >= 0 ? "#16a34a" : "#dc2626"}">${formatCurrency(totalProfit)}</td>
+      <td style="color:${totalOverall >= 0 ? "#16a34a" : "#dc2626"}">${totalOverall.toFixed(2)}%</td>
+    </tr>
+  </tbody>
+</table>
+</body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
   setTimeout(() => {
-    const el = document.getElementById("print-monthly-style");
-    if (el) el.remove();
-  }, 1000);
+    printWindow.print();
+  }, 300);
 }
 
 interface MonthCardProps {
   summary: MonthlySummary;
+  entries: Entry[];
   index: number;
 }
 
-function MonthCard({ summary, index }: MonthCardProps) {
+function MonthCard({ summary, entries, index }: MonthCardProps) {
   const isPositive = summary.totalProfit >= 0;
   const idx = index + 1;
 
@@ -156,15 +238,53 @@ function MonthCard({ summary, index }: MonthCardProps) {
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <div
-            className={`font-display text-xl font-bold ${
-              isPositive ? "text-profit" : "text-loss"
-            }`}
-          >
-            {formatPercent(summary.profitPercent)}
+        <div className="flex items-center gap-2">
+          <div className="text-right">
+            <div
+              className={`font-display text-xl font-bold ${
+                isPositive ? "text-profit" : "text-loss"
+              }`}
+            >
+              {formatPercent(summary.profitPercent)}
+            </div>
+            <div className="text-xs text-muted-foreground">return</div>
           </div>
-          <div className="text-xs text-muted-foreground">return</div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-2 border-border text-muted-foreground hover:text-foreground hover:bg-accent gap-1"
+                data-ocid={`monthly.export.button.${idx}`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                <ChevronDown className="w-3 h-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-36">
+              <DropdownMenuItem
+                onClick={() => exportMonthCSV(summary, entries)}
+                data-ocid={`monthly.export.csv.${idx}`}
+                className="cursor-pointer text-sm gap-2"
+              >
+                CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => exportMonthPDF(summary, entries)}
+                data-ocid={`monthly.export.pdf.${idx}`}
+                className="cursor-pointer text-sm gap-2"
+              >
+                PDF
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => exportMonthDOC(summary, entries)}
+                data-ocid={`monthly.export.doc.${idx}`}
+                className="cursor-pointer text-sm gap-2"
+              >
+                DOC
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -222,6 +342,7 @@ function MonthCard({ summary, index }: MonthCardProps) {
 
 export default function MonthlyHistory() {
   const { data: summaries, isLoading, isError } = useGetMonthlySummaries();
+  const { data: entries = [] } = useGetEntries();
 
   const sorted = summaries
     ? [...summaries].sort((a, b) => b.yearMonth.localeCompare(a.yearMonth))
@@ -230,54 +351,14 @@ export default function MonthlyHistory() {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-6 animate-fade-in-up">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
-              Monthly History
-            </h1>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Auto-grouped monthly summaries — previous months are closed
-              automatically
-            </p>
-          </div>
-
-          {sorted.length > 0 && (
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-muted-foreground mr-1 hidden sm:block">
-                Export:
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportCSV(sorted)}
-                className="border-border text-foreground hover:bg-accent gap-1.5 h-8 px-3 text-xs"
-                data-ocid="monthly.primary_button"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5 text-profit" />
-                CSV
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportPDF(sorted)}
-                className="border-border text-foreground hover:bg-accent gap-1.5 h-8 px-3 text-xs"
-                data-ocid="monthly.secondary_button"
-              >
-                <FileText className="w-3.5 h-3.5 text-amber" />
-                PDF
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => exportDOC(sorted)}
-                className="border-border text-foreground hover:bg-accent gap-1.5 h-8 px-3 text-xs"
-                data-ocid="monthly.save_button"
-              >
-                <FileType className="w-3.5 h-3.5 text-muted-foreground" />
-                DOC
-              </Button>
-            </div>
-          )}
+        <div>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-foreground">
+            Monthly History
+          </h1>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Auto-grouped monthly summaries. Click the export button on each
+            month to download its full data.
+          </p>
         </div>
       </div>
 
@@ -335,14 +416,12 @@ export default function MonthlyHistory() {
             </p>
           </div>
         ) : (
-          <div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in-up"
-            data-print-area
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 animate-fade-in-up">
             {sorted.map((summary, index) => (
               <MonthCard
                 key={summary.yearMonth}
                 summary={summary}
+                entries={entries}
                 index={index}
               />
             ))}
