@@ -10,25 +10,61 @@ import type { ActorMethod } from '@icp-sdk/core/agent';
 import type { IDL } from '@icp-sdk/core/candid';
 import type { Principal } from '@icp-sdk/core/principal';
 
+export interface DashboardStats {
+  'totalReceived' : number,
+  'totalInvested' : number,
+  'totalProfit' : number,
+  'avgDailyProfit' : number,
+  'profitPercent' : number,
+}
+export type DateString = string;
 export interface Entry {
-  'id' : bigint,
-  'date' : string,
+  'id' : EntryId,
+  'date' : DateString,
   'createdAt' : bigint,
   'receivedAmount' : number,
   'investAmount' : number,
 }
-export interface Summary {
+export type EntryId = bigint;
+export interface MonthlySummary {
   'totalReceived' : number,
-  'averageDailyProfitPercentage' : number,
-  'totalInvest' : number,
+  'totalInvested' : number,
+  'entryCount' : bigint,
+  'yearMonth' : YearMonthString,
   'totalProfit' : number,
-  'profitPercentage' : number,
+  'avgDailyProfit' : number,
+  'profitPercent' : number,
 }
+export interface UserProfile {
+  'username' : string,
+  'lastLoginAt' : [] | [bigint],
+  'createdAt' : bigint,
+  'email' : [] | [string],
+  'passwordHash' : [] | [string],
+}
+export type UserRole = { 'admin' : null } |
+  { 'user' : null } |
+  { 'guest' : null };
+export type YearMonthString = string;
 export interface _SERVICE {
-  'addEntry' : ActorMethod<[string, number, number], Entry>,
-  'deleteEntry' : ActorMethod<[bigint], boolean>,
+  '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'addEntry' : ActorMethod<[DateString, number, number], Entry>,
+  'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
+  'deleteEntry' : ActorMethod<[EntryId], boolean>,
+  'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
+  'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getDashboardStats' : ActorMethod<[], DashboardStats>,
   'getEntries' : ActorMethod<[], Array<Entry>>,
-  'getSummary' : ActorMethod<[], Summary>,
+  'getMonthlySummaries' : ActorMethod<[], Array<MonthlySummary>>,
+  'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
+  'isCallerAdmin' : ActorMethod<[], boolean>,
+  'registerUser' : ActorMethod<[string], undefined>,
+  'registerUserWithEmailPassword' : ActorMethod<
+    [string, string, string],
+    undefined
+  >,
+  'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
+  'verifyEmailPassword' : ActorMethod<[string, string], boolean>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

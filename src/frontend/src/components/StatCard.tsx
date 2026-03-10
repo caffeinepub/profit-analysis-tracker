@@ -46,7 +46,7 @@ export default function StatCard({
   return (
     <div
       className={`
-        relative rounded-xl border bg-card p-4 shadow-card
+        relative rounded-xl border bg-card p-3 shadow-card
         transition-all duration-300 hover:shadow-card-hover hover:-translate-y-0.5
         ${styles.card} ${styles.glow}
       `}
@@ -63,16 +63,16 @@ export default function StatCard({
         />
       )}
 
-      <div className="relative flex items-start justify-between gap-4">
+      <div className="relative flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1.5">
             {label}
           </p>
           {isLoading ? (
-            <Skeleton className="h-8 w-28 mb-1" />
+            <Skeleton className="h-5 w-20 mb-1" />
           ) : (
             <p
-              className={`text-xl font-display font-bold tracking-tight animate-number-reveal ${styles.value}`}
+              className={`text-base font-display font-bold tracking-tight animate-number-reveal ${styles.value}`}
               style={{ animationDelay: `${delay + 100}ms` }}
             >
               {value}
@@ -83,9 +83,9 @@ export default function StatCard({
           )}
         </div>
         <div
-          className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${styles.icon}`}
+          className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${styles.icon}`}
         >
-          <Icon className="w-5 h-5" />
+          <Icon className="w-4 h-4" />
         </div>
       </div>
     </div>

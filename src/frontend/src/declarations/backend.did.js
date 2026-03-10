@@ -8,51 +8,141 @@
 
 import { IDL } from '@icp-sdk/core/candid';
 
+export const DateString = IDL.Text;
+export const EntryId = IDL.Nat;
 export const Entry = IDL.Record({
-  'id' : IDL.Nat,
-  'date' : IDL.Text,
+  'id' : EntryId,
+  'date' : DateString,
   'createdAt' : IDL.Int,
   'receivedAmount' : IDL.Float64,
   'investAmount' : IDL.Float64,
 });
-export const Summary = IDL.Record({
+export const UserRole = IDL.Variant({
+  'admin' : IDL.Null,
+  'user' : IDL.Null,
+  'guest' : IDL.Null,
+});
+export const UserProfile = IDL.Record({
+  'username' : IDL.Text,
+  'lastLoginAt' : IDL.Opt(IDL.Int),
+  'createdAt' : IDL.Int,
+  'email' : IDL.Opt(IDL.Text),
+  'passwordHash' : IDL.Opt(IDL.Text),
+});
+export const DashboardStats = IDL.Record({
   'totalReceived' : IDL.Float64,
-  'averageDailyProfitPercentage' : IDL.Float64,
-  'totalInvest' : IDL.Float64,
+  'totalInvested' : IDL.Float64,
   'totalProfit' : IDL.Float64,
-  'profitPercentage' : IDL.Float64,
+  'avgDailyProfit' : IDL.Float64,
+  'profitPercent' : IDL.Float64,
+});
+export const YearMonthString = IDL.Text;
+export const MonthlySummary = IDL.Record({
+  'totalReceived' : IDL.Float64,
+  'totalInvested' : IDL.Float64,
+  'entryCount' : IDL.Nat,
+  'yearMonth' : YearMonthString,
+  'totalProfit' : IDL.Float64,
+  'avgDailyProfit' : IDL.Float64,
+  'profitPercent' : IDL.Float64,
 });
 
 export const idlService = IDL.Service({
-  'addEntry' : IDL.Func([IDL.Text, IDL.Float64, IDL.Float64], [Entry], []),
-  'deleteEntry' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+  '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'addEntry' : IDL.Func([DateString, IDL.Float64, IDL.Float64], [Entry], []),
+  'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+  'deleteEntry' : IDL.Func([EntryId], [IDL.Bool], []),
+  'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+  'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getDashboardStats' : IDL.Func([], [DashboardStats], ['query']),
   'getEntries' : IDL.Func([], [IDL.Vec(Entry)], ['query']),
-  'getSummary' : IDL.Func([], [Summary], ['query']),
+  'getMonthlySummaries' : IDL.Func([], [IDL.Vec(MonthlySummary)], ['query']),
+  'getUserProfile' : IDL.Func(
+      [IDL.Principal],
+      [IDL.Opt(UserProfile)],
+      ['query'],
+    ),
+  'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+  'registerUser' : IDL.Func([IDL.Text], [], []),
+  'registerUserWithEmailPassword' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [],
+      [],
+    ),
+  'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+  'verifyEmailPassword' : IDL.Func([IDL.Text, IDL.Text], [IDL.Bool], ['query']),
 });
 
 export const idlInitArgs = [];
 
 export const idlFactory = ({ IDL }) => {
+  const DateString = IDL.Text;
+  const EntryId = IDL.Nat;
   const Entry = IDL.Record({
-    'id' : IDL.Nat,
-    'date' : IDL.Text,
+    'id' : EntryId,
+    'date' : DateString,
     'createdAt' : IDL.Int,
     'receivedAmount' : IDL.Float64,
     'investAmount' : IDL.Float64,
   });
-  const Summary = IDL.Record({
+  const UserRole = IDL.Variant({
+    'admin' : IDL.Null,
+    'user' : IDL.Null,
+    'guest' : IDL.Null,
+  });
+  const UserProfile = IDL.Record({
+    'username' : IDL.Text,
+    'lastLoginAt' : IDL.Opt(IDL.Int),
+    'createdAt' : IDL.Int,
+    'email' : IDL.Opt(IDL.Text),
+    'passwordHash' : IDL.Opt(IDL.Text),
+  });
+  const DashboardStats = IDL.Record({
     'totalReceived' : IDL.Float64,
-    'averageDailyProfitPercentage' : IDL.Float64,
-    'totalInvest' : IDL.Float64,
+    'totalInvested' : IDL.Float64,
     'totalProfit' : IDL.Float64,
-    'profitPercentage' : IDL.Float64,
+    'avgDailyProfit' : IDL.Float64,
+    'profitPercent' : IDL.Float64,
+  });
+  const YearMonthString = IDL.Text;
+  const MonthlySummary = IDL.Record({
+    'totalReceived' : IDL.Float64,
+    'totalInvested' : IDL.Float64,
+    'entryCount' : IDL.Nat,
+    'yearMonth' : YearMonthString,
+    'totalProfit' : IDL.Float64,
+    'avgDailyProfit' : IDL.Float64,
+    'profitPercent' : IDL.Float64,
   });
   
   return IDL.Service({
-    'addEntry' : IDL.Func([IDL.Text, IDL.Float64, IDL.Float64], [Entry], []),
-    'deleteEntry' : IDL.Func([IDL.Nat], [IDL.Bool], []),
+    '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'addEntry' : IDL.Func([DateString, IDL.Float64, IDL.Float64], [Entry], []),
+    'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
+    'deleteEntry' : IDL.Func([EntryId], [IDL.Bool], []),
+    'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
+    'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getDashboardStats' : IDL.Func([], [DashboardStats], ['query']),
     'getEntries' : IDL.Func([], [IDL.Vec(Entry)], ['query']),
-    'getSummary' : IDL.Func([], [Summary], ['query']),
+    'getMonthlySummaries' : IDL.Func([], [IDL.Vec(MonthlySummary)], ['query']),
+    'getUserProfile' : IDL.Func(
+        [IDL.Principal],
+        [IDL.Opt(UserProfile)],
+        ['query'],
+      ),
+    'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
+    'registerUser' : IDL.Func([IDL.Text], [], []),
+    'registerUserWithEmailPassword' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [],
+        [],
+      ),
+    'saveCallerUserProfile' : IDL.Func([UserProfile], [], []),
+    'verifyEmailPassword' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Bool],
+        ['query'],
+      ),
   });
 };
 

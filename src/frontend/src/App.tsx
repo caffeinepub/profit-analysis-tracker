@@ -1,14 +1,77 @@
 import { Toaster } from "@/components/ui/sonner";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import NavBar from "./components/NavBar";
+import { useActor } from "./hooks/useActor";
+import { useInternetIdentity } from "./hooks/useInternetIdentity";
+import { useGetUserProfile } from "./hooks/useQueries";
+import AddEntry from "./pages/AddEntry";
+import DailyHistory from "./pages/DailyHistory";
 import Dashboard from "./pages/Dashboard";
-import History from "./pages/History";
+import Login from "./pages/Login";
+import MonthlyHistory from "./pages/MonthlyHistory";
 
-type Page = "dashboard" | "history";
+export type Page =
+  | "dashboard"
+  | "add-entry"
+  | "daily-history"
+  | "monthly-history";
 
 export default function App() {
+  const { identity, isInitializing } = useInternetIdentity();
+  const { isFetching: actorFetching } = useActor();
+  const { data: userProfile, isLoading: profileLoading } = useGetUserProfile();
   const [currentPage, setCurrentPage] = useState<Page>("dashboard");
 
+  // Loading: II initializing or actor loading
+  if (isInitializing || (identity && actorFetching)) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <Loader2 className="w-6 h-6 text-profit animate-spin" />
+          </div>
+          <p className="text-muted-foreground text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not logged in
+  if (!identity) {
+    return (
+      <>
+        <Login />
+        <Toaster richColors position="top-right" />
+      </>
+    );
+  }
+
+  // Profile loading
+  if (profileLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <Loader2 className="w-6 h-6 text-profit animate-spin" />
+          </div>
+          <p className="text-muted-foreground text-sm">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No profile — open register tab
+  if (!userProfile) {
+    return (
+      <>
+        <Login defaultTab="register" />
+        <Toaster richColors position="top-right" />
+      </>
+    );
+  }
+
+  // Main app
   return (
     <div className="min-h-screen bg-background relative">
       {/* Background ambient gradient */}
@@ -23,14 +86,21 @@ export default function App() {
         }}
       />
 
-      <NavBar currentPage={currentPage} onNavigate={setCurrentPage} />
+      <NavBar
+        currentPage={currentPage}
+        onNavigate={setCurrentPage}
+        username={userProfile.username}
+      />
 
-      {/* Page content with top padding for fixed nav */}
       <div className="pt-16">
-        {currentPage === "dashboard" ? <Dashboard /> : <History />}
+        {currentPage === "dashboard" && (
+          <Dashboard username={userProfile.username} />
+        )}
+        {currentPage === "add-entry" && <AddEntry />}
+        {currentPage === "daily-history" && <DailyHistory />}
+        {currentPage === "monthly-history" && <MonthlyHistory />}
       </div>
 
-      {/* Footer */}
       <footer className="border-t border-border mt-16 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-center text-xs text-muted-foreground">
